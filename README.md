@@ -1,5 +1,9 @@
 # ICED Hand Tracking Demo
 
+This repo contains the source code for the ICED non-intrusive low-cost easy-configurable hand tracking demo.
+
+**N.b.** The demo expects three cameras (full software will allow n cameras).
+
 
 ## Setup
 
@@ -22,10 +26,10 @@ pip install -r requirements.txt
 
 Step 1. Calibrate the scene.
 
-Make sure the cameras and VR headset are connected. Place the aruco marker on the headset to act as the datum point for the positioning data. From the top-level folder run.
+Make sure the cameras and VR headset are connected. Place the aruco marker on the headset to act as the datum point for the positioning data. From the top-level folder run defining the camera ids as a comma seperated list.
 
 ```
-python calibrate\main.py
+python calibrate\main.py 1,2,3
 ```
 
 N.b. You may have to change the camera ids if one of the cameras is not selected.
@@ -43,7 +47,8 @@ This will train a set of ML models, which are saved to the `tmp` directory. The 
 
 Step 3. Run the tracking module
 
-Run
+From the top-level folder run the following command defining the camera ids as a comma seperated list.
+
 ```
-python track\main.py
+python track\main.py 1,2,3
 ```

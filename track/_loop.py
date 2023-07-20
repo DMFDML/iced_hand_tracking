@@ -1,5 +1,4 @@
 from __future__ import annotations
-from curses import flash
 from typing import TYPE_CHECKING
 from interfaces import Gesture
 import numpy as np
@@ -160,29 +159,25 @@ def loop(self: HandTracker, frame_rate: int):
 
         ## Updating the 3d plot(s)
 
-        right_array = np.empty((21, 2))
+        right_array = np.empty((21, 6))
         right_array[:] = np.nan
-        right_camera_reading_flag = False
         right_camera_readings = [False, False, False]
-        for camera in self.cameras:
+        for i, camera in enumerate(self.cameras):
             if camera["right"]["landmarks"].size != 0:
                 right_camera_readings[i] = True
-                right_camera_reading_flag = True
-                for i, row in enumerate(camera["right"]["landmarks"]):
-                    right_array[i] = row[0] / 1000
-                    right_array[i] = row[1] / 1000
+                for j, row in enumerate(camera["right"]["landmarks"]):
+                    right_array[j,2*i] = row[0] / 1000
+                    right_array[j,(2*i)+1] = row[1] / 1000
 
-        left_array = np.empty((21, 2))
+        left_array = np.empty((21, 6))
         left_array[:] = np.nan
-        left_camera_reading_flag = False
         left_camera_readings = [False, False, False]
         for i, camera in enumerate(self.cameras):
             if camera["left"]["landmarks"].size != 0:
                 left_camera_readings[i] = True
-                left_camera_reading_flag = True
                 for j, row in enumerate(camera["left"]["landmarks"]):
-                    left_array[j] = row[0] / 1000
-                    left_array[j] = row[1] / 1000
+                    left_array[j,2*i] = row[0] / 1000
+                    left_array[j,(2*i)+1] = row[1] / 1000
 
         # reset the hands fig
         if self.hands_fig3d:
@@ -194,29 +189,26 @@ def loop(self: HandTracker, frame_rate: int):
             self.hands_fig3d_ax.set_zlim(self.z_min, self.z_max)
             self.hands_fig3d_ax.set_zlabel("z (is y)")
 
-        if right_camera_reading_flag:
+        if sum(right_camera_readings) > 1:
             if (
                 right_camera_readings[0]
                 and right_camera_readings[1]
                 and right_camera_readings[2]
             ):
                 pos = self.ml_all.predict(right_array)
-                break
             elif right_camera_readings[0] and right_camera_readings[1]:
-                pos = self.ml_12.predict(right_array)
-                break
+                pos = self.ml_12.predict(np.take(right_array, [0,1,2,3], axis=1))
             elif right_camera_readings[1] and right_camera_readings[2]:
-                pos = self.ml_23.predict(right_array)
-                break
+                pos = self.ml_23.predict(np.take(right_array, [2,3,4,5], axis=1))
             elif right_camera_readings[0] and right_camera_readings[2]:
-                pos = self.ml_13.predict(right_array)
-                break
+                pos = self.ml_13.predict(np.take(right_array, [0,1,4,5], axis=1))
 
             if self.path_fig3d:
                 if self.path_fig3d_scatter_right:
                     self.path_fig3d_scatter_right.remove()
                     self.path_fig3d_scatter_right = None
-                self.path_right = np.vstack([self.path_right, pos[8, :]])
+                
+                self.path_right = np.vstack((self.path_right, pos[8, :]))
                 self.path_fig3d_scatter_right = self.path_fig3d_ax.scatter3D(
                     self.path_right[:, 0],
                     self.path_right[:, 1],
@@ -237,33 +229,29 @@ def loop(self: HandTracker, frame_rate: int):
                     pos[17:21, 0], pos[17:21, 1], pos[17:21, 2], "-or"
                 )
 
-        if left_camera_reading_flag:
+        if sum(left_camera_readings) > 1:
             if (
                 left_camera_readings[0]
                 and left_camera_readings[1]
                 and left_camera_readings[2]
             ):
-                pos = self.ml_all.predict(right_array)
-                break
+                pos = self.ml_all.predict(left_array)
             elif left_camera_readings[0] and left_camera_readings[1]:
-                pos = self.ml_12.predict(right_array)
-                break
+                pos = self.ml_12.predict(np.take(left_array, [0,1,2,3], axis=1))
             elif left_camera_readings[1] and left_camera_readings[2]:
-                pos = self.ml_23.predict(right_array)
-                break
+                pos = self.ml_23.predict(np.take(left_array, [2,3,4,5], axis=1))
             elif left_camera_readings[0] and left_camera_readings[2]:
-                pos = self.ml_13.predict(right_array)
-                break
+                pos = self.ml_13.predict(np.take(left_array, [0,1,4,5], axis=1))
 
             if self.path_fig3d:
-                if self.path_fig3d_scatter_right:
-                    self.path_fig3d_scatter_right.remove()
-                    self.path_fig3d_scatter_right = None
-                self.path_right = np.vstack([self.path_right, pos[8, :]])
+                if self.path_fig3d_scatter_left:
+                    self.path_fig3d_scatter_left.remove()
+                    self.path_fig3d_scatter_left = None
+                self.path_left = np.vstack((self.path_left, pos[8, :]))
                 self.path_fig3d_scatter_right = self.path_fig3d_ax.scatter3D(
-                    self.path_right[:, 0],
-                    self.path_right[:, 1],
-                    self.path_right[:, 2],
+                    self.path_left[:, 0],
+                    self.path_left[:, 1],
+                    self.path_left[:, 2],
                     c="b",
                     marker="o",
                 )

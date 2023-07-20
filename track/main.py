@@ -4,7 +4,10 @@ import os
 from matplotlib.figure import Figure
 import socket
 import numpy as np
+import sys
+import signal
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 class HandTracker:
     cameras: list[Camera] = []
@@ -36,8 +39,7 @@ class HandTracker:
     z_max: float = 5.0
 
     def __init__(self) -> None:
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        tensor_file = dir_path + "/..tmp/input_tensors.csv"
+        tensor_file = dir_path + "/../tmp/output_tensors.csv"
 
         if os.path.exists(tensor_file):
             m = np.genfromtxt(tensor_file, delimiter=",")
@@ -58,16 +60,19 @@ class HandTracker:
     from _init_mediapipe import init_mediapipe
     from _init_regression import init_regression
     from _loop import loop
+    from _stop import stop
 
 
 if __name__ == "__main__":
+    ids = sys.argv[-1].split(",")
+    for i, id in enumerate(ids):
+        ids[i] = int(id)
+
     tracker = HandTracker()
-    tracker.init_cameras([1, 2, 3])
+    tracker.init_cameras(ids)
     tracker.init_fig()
     tracker.init_path_fig()
     tracker.init_hands_fig()
-
-    dir_path = os.path.dirname(os.path.realpath(__file__))
 
     task_file = dir_path + "/../tasks/gesture_recognizer.task"
     if not os.path.exists(task_file):
@@ -77,4 +82,6 @@ if __name__ == "__main__":
 
     tracker.init_regression()
 
-    tracker.loop(10)
+    signal.signal(signal.SIGINT, tracker.stop)
+
+    tracker.loop(30)

@@ -27,7 +27,7 @@ def loop(self: Calibrate, frame_rate: int = 10, timeout_secs: float = 5):
 
     camerasAreOpen = True
     while camerasAreOpen:
-        print("Time Left:", time.time() - timeout_timestamp)
+        # print("Time Left:", time.time() - timeout_timestamp)
         if time.time() > timeout_timestamp:
             break
         # check the cameras are still accessible
@@ -115,7 +115,7 @@ def loop(self: Calibrate, frame_rate: int = 10, timeout_secs: float = 5):
                 input_tensor.append(np.nan)
 
         if any_data and self.hmd_pos is not None:
-            print(input_tensor, self.hmd_pos)
+            #print(input_tensor, self.hmd_pos)
             self.input_tensors.append(input_tensor)
             if self.output_tensors is not None:
                 self.output_tensors = np.vstack((self.output_tensors, self.hmd_pos))
@@ -123,7 +123,7 @@ def loop(self: Calibrate, frame_rate: int = 10, timeout_secs: float = 5):
                 self.output_tensors = np.asarray([self.hmd_pos])
                 print(self.output_tensors)
 
-            if self.fig3d and self.output_tensors.shape[0] % 20 == 0:
+            if self.fig3d and self.output_tensors.shape[0] % 120 == 0:
                 self.fig3d_scatter.remove()
                 self.fig3d_scatter = self.fig3d_ax.scatter(
                     self.output_tensors[:, 0],
@@ -136,12 +136,15 @@ def loop(self: Calibrate, frame_rate: int = 10, timeout_secs: float = 5):
 
     # Now store the data.
     print("Storing the data.")
+    for camera in self.cameras:
+        if camera["feed"].isOpened():
+            camera["feed"].release()
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     if self.output_tensors is not None:
-        if not os.path.isdir(dir_path + "/tmp"):
-            os.mkdir(dir_path + "/tmp")
+        if not os.path.isdir(dir_path + "/../tmp"):
+            os.mkdir(dir_path + "/../tmp")
         np.savetxt(
             dir_path + "/../tmp/output_tensors.csv",
             self.output_tensors,
